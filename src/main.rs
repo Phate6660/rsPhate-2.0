@@ -79,7 +79,7 @@ async fn meta() -> (String, String, String, String, String) {
          artist.to_string(), 
          album.to_string(), 
          title.to_string(), 
-         full_cover.to_string())
+         full_cover)
     } else {
         (player_name.to_string(), 
          artist.to_string(), 
