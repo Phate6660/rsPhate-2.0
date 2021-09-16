@@ -57,25 +57,43 @@ async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 async fn meta() -> (String, String, String, String, String) {
     let player_finder = PlayerFinder::new().context("Could not connect to D-Bus").unwrap();
     let player = player_finder.find_active().context("Could not find any player").unwrap();
+    let player_name = player.identity();
     let metadata = player.get_metadata().context("Could not get metadata").unwrap();
     let artist = &metadata.artists().unwrap()[0];
     let album = &metadata.album_name().unwrap();
     let title = &metadata.title().unwrap();
     let cover = &metadata.art_url().unwrap();
-    let full_cover = [&cover[7..], ".jpg"].concat();
-    let base_cover_vec = full_cover.split('/').collect::<Vec<&str>>();
-    let base_cover = base_cover_vec[7];
-    let cover_with_attach = ["attachment://", base_cover].concat();
-    (artist.to_string(), album.to_string(), title.to_string(), full_cover.to_string(), cover_with_attach)
+    if player_name == "Rhythmbox" {
+        let full_cover = [&cover[7..], ".jpg"].concat();
+        (player_name.to_string(), 
+         artist.to_string(), 
+         album.to_string(), 
+         title.to_string(), 
+         full_cover.to_string())
+    } else {
+        (player_name.to_string(), 
+         artist.to_string(), 
+         album.to_string(), 
+         title.to_string(), 
+         cover.to_string())
+    }
 }
 
 #[command]
 async fn wipltrn(ctx: &Context, msg: &Message) -> CommandResult {
-    let (artist, album, title, full_cover, cover_with_attach) = meta().await;
+    let (player_name, artist, album, title, full_cover) = meta().await;
+    let cover_with_attach = if player_name == "Rhythmbox" {
+        let base_cover_vec = full_cover.split('/').collect::<Vec<&str>>();
+        let base_cover = base_cover_vec[7];
+        ["attachment://", base_cover].concat()
+    } else {
+        full_cover.to_string()
+    };
     let sent_message = msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| {
             e.title("What Is Phate Listening To Right Now");
             e.url("https://libre.fm/user/phate6660");
+            e.field("Player", &player_name, false);
             e.field("Title", title, false);
             e.field("Album", album, false);
             e.field("Artist", artist, false);
@@ -83,7 +101,11 @@ async fn wipltrn(ctx: &Context, msg: &Message) -> CommandResult {
             e.color(serenity::utils::Color::PURPLE);
             e
         });
-        m.add_file(AttachmentType::Path(Path::new(&full_cover)));
+        if player_name == "Rhythmbox" {
+            m.add_file(AttachmentType::Path(Path::new(&full_cover)));
+        } else {
+            m.add_file(AttachmentType::Image(&full_cover));
+        }
         m
     }).await;
     if let Err(why) = sent_message {
