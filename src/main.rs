@@ -2,7 +2,7 @@
 #![allow(non_snake_case)]
 
 mod commands;
-use commands::{WIPLTRN_COMMAND, WWW_COMMAND};
+use commands::{GIT_COMMAND, WIPLTRN_COMMAND, WWW_COMMAND};
 use serenity::async_trait;
 use serenity::client::{Client, Context, EventHandler};
 use serenity::model::{
@@ -22,7 +22,7 @@ use std::collections::HashSet;
 use std::env;
 
 #[group]
-#[commands(wipltrn, www)]
+#[commands(git, wipltrn, www)]
 struct General;
 
 struct Handler;

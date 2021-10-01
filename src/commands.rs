@@ -7,7 +7,49 @@ use serenity::framework::standard::{
     Args, CommandResult,
     macros::command
 };
+use serenity::utils::MessageBuilder;
 use std::path::Path;
+
+#[command]
+#[description = "Bot will parse the input and output the correct full link to the repo."]
+#[usage = "site user/repo"]
+#[example = "github Phate6660/rsfetch"]
+#[example = "gitlab ArcticTheRogue/asgl"]
+#[example = "codeberg Phate6660/musinfo"]
+#[example = "github phate/rsPhate-2.0"]
+#[num_args(2)]
+pub async fn git(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let site = args.single::<String>()?;
+    let repo = args.single::<String>()?;
+    let match_site = site.as_str();
+
+    // Match for site to create message.
+    let message: String = match match_site {
+        "github" => MessageBuilder::new()
+            .push("https://github.com/")
+            .push(repo)
+            .build(),
+        "gitlab" => MessageBuilder::new()
+            .push("https://gitlab.com/")
+            .push(repo)
+            .build(),
+        "codeberg" => MessageBuilder::new()
+            .push("https://codeberg.org/")
+            .push(repo)
+            .build(),
+        "sourcehut" => MessageBuilder::new()
+            .push("https://sr.ht/~")
+            .push(repo)
+            .build(),
+        _ => "Could not generate a full link, please try again.".to_string(),
+    };
+
+    if let Err(why) = msg.channel_id.say(&ctx.http, &message).await {
+        println!("Could not push full Git repo link because: {}", why);
+    }
+
+    Ok(())
+}
 
 async fn meta() -> (String, String, String, String, String) {
     let player_finder = PlayerFinder::new().context("Could not connect to D-Bus").unwrap();
